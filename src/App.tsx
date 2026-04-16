@@ -1,66 +1,97 @@
-import { useReducer, useState } from 'react';
-import type { Todo, FilterType } from './types/todo.type';
-import { AddTodoForm } from './components/AddTodoForm';
-import { TodoItem } from './components/TodoItem';
-import { FilterBar } from './components/FilterBar';
-import { todoReducer } from './reducers/todoReducer';
+import React, { useState } from "react";
+import { Box } from "@mui/material";
 
-import { Container, Typography, Paper } from '@mui/material';
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import TaskInput from "./components/TaskInput";
+import TaskList from "./components/TaskList";
+import useResponsive from "./hooks/useResponsive";
+import type { Task } from "./types/Task";
 
 export default function App() {
-    const [todos, dispatch] = useReducer(todoReducer, [] as Todo[]);
-    const [filter, setFilter] = useState<FilterType>('all');
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [text, setText] = useState<string>("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 
-    const handleAdd = (title: string) => {
-        dispatch({ type: 'ADD', payload: title });
-    };
+  const { isMobile, isTablet, isDesktop } = useResponsive();
 
-    const handleToggle = (id: string) => {
-        dispatch({ type: 'TOGGLE', payload: id });
-    };
+  const addTask = (): void => {
+    if (!text.trim()) return;
 
-    const handleDelete = (id: string) => {
-        dispatch({ type: 'DELETE', payload: id });
-    };
+    if (editingId !== null) {
+      setTasks(tasks.map(t =>
+        t.id === editingId ? { ...t, text } : t
+      ));
+      setEditingId(null);
+    } else {
+      const newTask: Task = {
+        id: Date.now(),
+        text,
+        completed: false
+      };
+      setTasks([...tasks, newTask]);
+    }
 
-    const filteredTodos = todos.filter(todo => {
-        if (filter === 'active') return !todo.completed;
-        if (filter === 'completed') return todo.completed;
-        return true;
-    });
+    setText("");
+  };
 
-    const activeCount = todos.filter(t => !t.completed).length;
+  const deleteTask = (id: number): void => {
+    setTasks(tasks.filter(t => t.id !== id));
+  };
 
-    return (
-        <Container maxWidth="sm" className="mt-10">
-            <Paper className="p-6 shadow-xl rounded-2xl">
-                <Typography variant="h4" className="mb-4 text-center">
-                    Todo App
-                </Typography>
+  const toggleTask = (id: number): void => {
+    setTasks(tasks.map(t =>
+      t.id === id ? { ...t, completed: !t.completed } : t
+    ));
+  };
 
-                <AddTodoForm onAdd={handleAdd} />
+  const editTask = (task: Task): void => {
+    setText(task.text);
+    setEditingId(task.id);
+  };
 
-                <div className="mt-4 flex justify-between items-center">
-                    <FilterBar
-                        activeFilter={filter}
-                        onFilterChange={setFilter}
-                    />
-                    <Typography variant="body2">
-                        {activeCount} active
-                    </Typography>
-                </div>
+  return (
+    <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+      <Header
+        onMenuClick={() => setDrawerOpen(true)}
+        isDesktop={isDesktop}
+      />
 
-                <ul className="mt-4 space-y-2">
-                    {filteredTodos.map(todo => (
-                        <TodoItem
-                            key={todo.id}
-                            todo={todo}
-                            onToggle={handleToggle}
-                            onDelete={handleDelete}
-                        />
-                    ))}
-                </ul>
-            </Paper>
-        </Container>
-    );
+      {!isDesktop && (
+        <Sidebar
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        />
+      )}
+
+      <Box sx={{ p: 2 }}>
+        <TaskInput
+          text={text}
+          setText={setText}
+          addTask={addTask}
+          editingId={editingId}
+        />
+
+        <Box
+          sx={{
+            display: "grid",
+            gap: 2,
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : isTablet
+              ? "repeat(2, 1fr)"
+              : "repeat(auto-fit, minmax(250px, 1fr))"
+          }}
+        >
+          <TaskList
+            tasks={tasks}
+            toggleTask={toggleTask}
+            deleteTask={deleteTask}
+            editTask={editTask}
+          />
+        </Box>
+      </Box>
+    </Box>
+  );
 }
