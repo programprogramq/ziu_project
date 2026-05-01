@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -53,6 +53,7 @@ export default function App() {
 
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+      
       <Header
         onMenuClick={() => setDrawerOpen(true)}
         isDesktop={isDesktop}
@@ -65,32 +66,52 @@ export default function App() {
         />
       )}
 
-      <Box sx={{ p: 2 }}>
-        <TaskInput
-          text={text}
-          setText={setText}
-          addTask={addTask}
-          editingId={editingId}
-        />
+      <Box
+        component="main"
+        aria-labelledby="main-title"
+        sx={{ p: 2 }}
+      >
+        <Typography id="main-title" variant="h5">
+          Twoje zadania
+        </Typography>
+
+        <section aria-label="Dodawanie zadania">
+          <TaskInput
+            text={text}
+            setText={setText}
+            addTask={addTask}
+            editingId={editingId}
+          />
+        </section>
 
         <Box
-          sx={{
-            display: "grid",
-            gap: 2,
-            gridTemplateColumns: isMobile
-              ? "1fr"
-              : isTablet
-              ? "repeat(2, 1fr)"
-              : "repeat(auto-fit, minmax(250px, 1fr))"
-          }}
+          role="status"
+          aria-live="polite"
+          sx={{ position: "absolute", left: "-9999px" }}
         >
-          <TaskList
-            tasks={tasks}
-            toggleTask={toggleTask}
-            deleteTask={deleteTask}
-            editTask={editTask}
-          />
+          {`Liczba zadań: ${tasks.length}`}
         </Box>
+
+        <section aria-label="Lista zadań">
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              gridTemplateColumns: isMobile
+                ? "1fr"
+                : isTablet
+                ? "repeat(2, 1fr)"
+                : "repeat(auto-fit, minmax(250px, 1fr))"
+            }}
+          >
+            <TaskList
+              tasks={tasks}
+              toggleTask={toggleTask}
+              deleteTask={deleteTask}
+              editTask={editTask}
+            />
+          </Box>
+        </section>
       </Box>
     </Box>
   );

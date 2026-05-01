@@ -17,8 +17,12 @@ const TaskItem: React.FC<Props> = ({
   deleteTask,
   editTask
 }) => {
+  const labelId = `task-${task.id}`;
+
   return (
     <Box
+      component="article"
+      aria-labelledby={labelId}
       sx={{
         bgcolor: "white",
         p: 2,
@@ -32,9 +36,17 @@ const TaskItem: React.FC<Props> = ({
         <Checkbox
           checked={task.completed}
           onChange={() => toggleTask(task.id)}
+          inputProps={{
+            "aria-labelledby": labelId,
+            "aria-label": `Oznacz jako ${
+              task.completed ? "nieukończone" : "ukończone"
+            }`
+          }}
         />
 
         <Typography
+          id={labelId}
+          component="p"
           sx={{
             textDecoration: task.completed ? "line-through" : "none",
             color: task.completed ? "gray" : "black"
@@ -44,11 +56,18 @@ const TaskItem: React.FC<Props> = ({
         </Typography>
       </Box>
 
-      <Box>
-        <IconButton onClick={() => editTask(task)}>
+      <Box role="group" aria-label="Akcje zadania">
+        <IconButton
+          onClick={() => editTask(task)}
+          aria-label={`Edytuj zadanie: ${task.text}`}
+        >
           <EditIcon />
         </IconButton>
-        <IconButton onClick={() => deleteTask(task.id)}>
+
+        <IconButton
+          onClick={() => deleteTask(task.id)}
+          aria-label={`Usuń zadanie: ${task.text}`}
+        >
           <DeleteIcon />
         </IconButton>
       </Box>

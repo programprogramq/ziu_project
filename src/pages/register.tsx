@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Box } from "@mui/material";
+import { Button, Box, Typography } from "@mui/material";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -15,6 +15,7 @@ import type { FormData } from "../types/form";
 export default function App() {
   const methods = useForm<FormData>({
     resolver: zodResolver(fullSchema),
+    mode: "onTouched",
     defaultValues: {
       categories: [],
       notifications: { email: false, push: false }
@@ -22,8 +23,7 @@ export default function App() {
   });
 
   const { step, next, back, setStep } = useStep();
-
-  const { trigger, handleSubmit, setError } = methods;
+  const { trigger, handleSubmit, setError, formState } = methods;
 
   const nextStep = async () => {
     let valid = false;
@@ -49,6 +49,9 @@ export default function App() {
     try {
       const res = await fetch("/api/register", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify(data)
       });
 
@@ -62,24 +65,85 @@ export default function App() {
 
       alert("Sukces!");
     } catch {
-      setError("root.serverError", {
+      setError("root", {
         message: "Błąd serwera…"
       });
     }
   };
 
+  const serverError = formState.errors.root?.message;
+
   return (
     <FormProvider {...methods}>
-      <Box p={2}>
+      <Box
+        component="main"
+        aria-labelledby="form-title"
+        p={2}
+      >
+        <Typography id="form-title" variant="h5">
+          Rejestracja użytkownika
+        </Typography>
+
         <Stepper step={step} />
 
-        {step === 1 && <Step1 />}
-        {step === 2 && <Step2 />}
-        {step === 3 && <Step3 onSubmit={handleSubmit(onSubmit)} />}
+        <Box
+          component="section"
+          aria-live="polite"
+          aria-busy={formState.isSubmitting}
+        >
+          {step === 1 && <Step1 />}
+          {step === 2 && <Step2 />}
+          {step === 3 && <Step3 onSubmit={handleSubmit(onSubmit)} />}
+        </Box>
 
-        <Box mt={2}>
-          {step > 1 && <Button onClick={back}>Wstecz</Button>}
-          {step < 3 && <Button onClick={nextStep}>Dalej</Button>}
+        {serverError && (
+          <Box
+            role="alert"
+            aria-live="assertive"
+            sx={{ mt: 2 }}
+          >
+            {serverError}
+          </Box>
+        )}
+        <Box
+          component="nav"
+          aria-label="Nawigacja formularza"
+          mt={2}
+        >
+          {step > 1 && (
+            <Button
+              onClick={back}
+              aria-label="Wróć do poprzedniego kroku"
+            >
+              Wstecz
+            </Button>
+          )}
+
+          {step < 3 && (
+            <Button
+              onClick={nextStep}
+              aria-label="Przejdź do następnego kroku"
+            >
+              Dalej
+            </Button>
+          )}
+
+          {step === 3 && (
+            <Button
+              onClick={handleSubmit(onSubmit)}
+              aria-label="Wyślij formularz rejestracji"
+            >
+              Zarejestruj się
+            </Button>
+          )}
+        </Box>
+
+        <Box
+          role="status"
+          aria-live="polite"
+          sx={{ position: "absolute", left: "-9999px" }}
+        >
+          {formState.isSubmitting ? "Wysyłanie formularza..." : ""}
         </Box>
       </Box>
     </FormProvider>
